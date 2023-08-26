@@ -53,7 +53,7 @@ class Backtest:
                      label='Strategy', color='red')
             if self.bench is not None:
                 plt.plot(self.bench['date'], (self.bench['cumulative_market_return'] - 1), label='Bench',
-                     color='gray')
+                         color='gray')
 
             # date
             plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
@@ -75,10 +75,26 @@ class Backtest:
 
     def report(self):
         if self.results is not None:
+            print("=====> BackTest Report <=====")
             total_market_return = self.results['cumulative_market_return'].iloc[-1] - 1
             total_strategy_return = (self.results['cumulative_strategy_return'].iloc[
                                          -1] - self.initial_cash) / self.initial_cash
+            cum_returns = self.results['cumulative_strategy_return']
+            # drawdown
+            drawdown = cum_returns - cum_returns.cummax()
+            max_drawdown = (drawdown.min() + self.initial_cash) / self.initial_cash - 1
+            # annual returns
+            annualized_return = (total_strategy_return + 1) ** (252 / len(cum_returns)) - 1
+            annualized_volatility = self.results['strategy_return'].std() * (252 ** 0.5)
+            # Sharpe ratio
+            sharpe_ratio = annualized_return / annualized_volatility
+
             print(f"Total Market Return: {total_market_return * 100:.2f}%")
             print(f"Total Strategy Return: {total_strategy_return * 100:.2f}%")
+            print(f"Max Drawdown: {max_drawdown:.2%}")
+            print(f"Annualized Return: {annualized_return:.2%}")
+            print(f"Annualized Volatility: {annualized_volatility:.2%}")
+            print(f"Sharpe Ratio: {sharpe_ratio:.2f}")
+            print("=====>                 <=====")
         else:
             print("Err: please run backtest first!")
