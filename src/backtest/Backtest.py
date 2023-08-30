@@ -37,36 +37,32 @@ class Backtest:
         self.results = self.strategy.data
 
     def compute_returns_multistock(self):
-        # sim position
-        for i in range(1, len(self.strategy.data)):
-            current_trade = self.strategy.data['trade'].iloc[i]
-            if current_trade == 1 and self.position == 0:
-                self.position = 1
-            elif current_trade == -1 and self.position == 1:
-                self.position = 0
-            self.strategy.data.at[i, 'trade'] = self.position
-
         # market returns
         self.strategy.data['market_return_1'] = self.strategy.data['close_1'].pct_change()
         self.strategy.data['market_return_2'] = self.strategy.data['close_2'].pct_change()
-
-        # strategy returns
-        def calculate_strategy_return(row):
-            if row['trade'] == 0:  # 无交易
-                return 0
-            else:
-                # 根据trade_id获取对应的市场回报率
-                market_return_col = 'market_return_' + row['trade_id'].split('_')[-1]
-                return row[market_return_col]
-
-        self.strategy.data['strategy_return'] = self.strategy.data.apply(calculate_strategy_return, axis=1)
-
-        # 计算累积市场回报和策略回报
-        self.strategy.data['cumulative_market_return'] = (1 + self.strategy.data['market_return']).cumprod()
+        self.strategy.data['strategy_return'] = 0.0
+        # backtest
+        for i in range(1, len(self.strategy.data)):
+            trade_list_str = self.strategy.data['trade'].iloc[i].split(';')
+            trade_id_list_str = self.strategy.data['trade_id'].iloc[i].split(';')
+            for j in range(1, len(trade_list_str)):
+                trade = int(trade_list_str[j])
+                trade_id = int(trade_id_list_str[j])
+                if self.position != trade_id and trade == 1:
+                    self.position = trade_id
+                elif self.position != 0 and trade == -1:
+                    self.position = 0
+            if not self.position == 0:
+                self.strategy.data.loc[i, 'strategy_return'] = self.strategy.data.loc[
+                    i, f"market_return_{self.position}"]
+        # calc returns
+        self.strategy.data['cumulative_market_return_1'] = (1 + self.strategy.data['market_return_1']).cumprod()
+        self.strategy.data['cumulative_market_return_2'] = (1 + self.strategy.data['market_return_2']).cumprod()
         self.strategy.data['cumulative_strategy_return'] = self.initial_cash * (
                 1 + self.strategy.data['strategy_return']).cumprod()
-
         self.results = self.strategy.data
+        self.results.to_csv('../assets/tmp.csv')
+        print(f"ret = {(self.results['cumulative_strategy_return'].iloc[-1] - self.initial_cash) / self.initial_cash}")
 
     def compute_bench(self):
         if self.bench is not None:
@@ -101,9 +97,12 @@ class Backtest:
         else:
             print("Please run the backtest before plotting.")
 
-    def run(self):
+    def run(self, is_multi=False):
         self.strategy.trade()
-        self.compute_returns()
+        if not is_multi:
+            self.compute_returns()
+        else:
+            self.compute_returns_multistock()
 
     def report(self):
         if self.results is not None:

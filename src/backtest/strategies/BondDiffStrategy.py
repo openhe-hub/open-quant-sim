@@ -16,4 +16,13 @@ class BondDiffStrategy(Strategy):
         self.data['diff'] = self.data['close_2'] - self.data['close_1']
 
     def trade(self):
-        pass
+        def row_operation(row):
+            if row['diff'] >= 2.3:
+                return ("-1;1", "2;1")
+            elif row['diff'] <= 1.7:
+                return ("-1;1", "1;2")
+            else:
+                return ("", "")
+
+        # 返回两个新的Series
+        self.data['trade'], self.data['trade_id'] = zip(*self.data.apply(row_operation, axis=1))

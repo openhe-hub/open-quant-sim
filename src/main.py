@@ -25,6 +25,9 @@ def test_macd_strategy():
 def test_bond_diff_strategy():
     strategy = BondDiffStrategy(pd.DataFrame())
     strategy.load_datasets('../assets/bond/sz127022.csv', '../assets/bond/sz127067.csv')
+    backtester = Backtest(strategy)
+    backtester.set_initial_cash(200000)
+    backtester.run(is_multi=True)
 
 
 if __name__ == '__main__':
