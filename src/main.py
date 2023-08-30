@@ -5,7 +5,10 @@ from open_quant_data.stat.MACDUtils import MACDUtils
 
 import pandas as pd
 
-if __name__ == '__main__':
+from src.backtest.strategies.BondDiffStrategy import BondDiffStrategy
+
+
+def test_macd_strategy():
     strategy = MACDStrategy(pd.read_csv('../assets/data.csv'))
     MACDUtils.plot_macd(pd.read_csv('../assets/data.csv')['close'].tolist())
     backtester = Backtest(strategy)
@@ -19,3 +22,10 @@ if __name__ == '__main__':
     backtester.plot_results()
 
 
+def test_bond_diff_strategy():
+    strategy = BondDiffStrategy(pd.DataFrame())
+    strategy.load_datasets('../assets/bond/sz127022.csv', '../assets/bond/sz127067.csv')
+
+
+if __name__ == '__main__':
+    test_bond_diff_strategy()

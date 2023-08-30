@@ -36,6 +36,38 @@ class Backtest:
                 1 + self.strategy.data['strategy_return']).cumprod()
         self.results = self.strategy.data
 
+    def compute_returns_multistock(self):
+        # sim position
+        for i in range(1, len(self.strategy.data)):
+            current_trade = self.strategy.data['trade'].iloc[i]
+            if current_trade == 1 and self.position == 0:
+                self.position = 1
+            elif current_trade == -1 and self.position == 1:
+                self.position = 0
+            self.strategy.data.at[i, 'trade'] = self.position
+
+        # market returns
+        self.strategy.data['market_return_1'] = self.strategy.data['close_1'].pct_change()
+        self.strategy.data['market_return_2'] = self.strategy.data['close_2'].pct_change()
+
+        # strategy returns
+        def calculate_strategy_return(row):
+            if row['trade'] == 0:  # 无交易
+                return 0
+            else:
+                # 根据trade_id获取对应的市场回报率
+                market_return_col = 'market_return_' + row['trade_id'].split('_')[-1]
+                return row[market_return_col]
+
+        self.strategy.data['strategy_return'] = self.strategy.data.apply(calculate_strategy_return, axis=1)
+
+        # 计算累积市场回报和策略回报
+        self.strategy.data['cumulative_market_return'] = (1 + self.strategy.data['market_return']).cumprod()
+        self.strategy.data['cumulative_strategy_return'] = self.initial_cash * (
+                1 + self.strategy.data['strategy_return']).cumprod()
+
+        self.results = self.strategy.data
+
     def compute_bench(self):
         if self.bench is not None:
             self.bench['market_return'] = self.bench['close'].pct_change()

@@ -2,7 +2,7 @@ import pandas as pd
 
 
 class Strategy:
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, data: pd.DataFrame = pd.DataFrame.empty):
         self.data = data.copy()
 
     def trade(self):
